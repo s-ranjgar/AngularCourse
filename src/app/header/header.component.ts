@@ -1,8 +1,12 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
+import { Subscription } from 'rxjs';
+import { Store } from '@ngrx/store';
+
 import { DataStorageService } from '../shared/data-storage.service';
 import { RecipeService } from '../recipes/recipe.service';
 import { AuthService } from '../auth/auth.service';
-import { Subscription } from 'rxjs';
+import *as fromApp from '../store/app.reducer';
+import { map } from 'rxjs/operators';
 
 @Component({
     selector: 'app-header',
@@ -15,13 +19,18 @@ export class HeaderComponent implements OnInit, OnDestroy {
     /**
      *
      */
-    constructor(private dataStorageService: DataStorageService, private recipeService: RecipeService, private authService: AuthService) { }
+    constructor(private dataStorageService: DataStorageService,
+        private recipeService: RecipeService,
+        private authService: AuthService,
+        private store: Store<fromApp.AppState>) { }
 
     ngOnInit(): void {
-        this.userSub = this.authService.user.subscribe(user => {
-            this.isAuthenticated = !user ? false : true;
-            // this.isAuthenticated = !!user;
-        });
+        this.userSub = this.store.select('auth')
+            .pipe(map(authState => { return authState.user; }))
+            .subscribe(user => {
+                this.isAuthenticated = !user ? false : true;
+                // this.isAuthenticated = !!user;
+            });
     }
 
     ngOnDestroy(): void {
@@ -39,8 +48,7 @@ export class HeaderComponent implements OnInit, OnDestroy {
             });
     }
 
-    onLogout()
-    {
+    onLogout() {
         this.authService.logout();
     }
 }
